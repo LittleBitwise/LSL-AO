@@ -6,7 +6,7 @@
 
 #define CYCLE_ANIM(string,list,integer) {  if (m == string) { if (list != []) { if (++integer >= llGLL(list)) integer = 0; llSAO(m, llL2S(list, integer)); llOwnerSay(llL2S(list, integer)); } }  }
 #define BEGIN_ANIM(string,list,integer) {  if (list != []) { llSAO(string, llL2S(list, integer)); }  }
-#define PARSE_ANIM(string,list,integer) {  if (!llSubStringIndex(data, string) && llStrlen(data) > integer) { list += llGSS(data, integer, -1); }  }
+#define PARSE_ANIM(string,list,integer) {  if (!llSubStringIndex(text, string) && llStrlen(text) > integer) { list += llGSS(text, integer, -1); }  }
 
 list crouching;         integer crouching_index;
 list crouchwalking;     integer crouchwalking_index;
@@ -162,7 +162,7 @@ default
         if (text == NAK) {
             llOwnerSay("Cache interrupted, didn't read full notecard!");
         } else {
-            llOwnerSay("Done!");
+            llOwnerSay("Finished reading " + (string)line + " lines.");
         }
 
         set_anims();
