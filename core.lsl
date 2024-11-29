@@ -31,11 +31,11 @@ list turning_left;      integer turning_left_index;
 list turning_right;     integer turning_right_index;
 list walking;           integer walking_index;
 
-#define NOTECARD "W // AO"
+#define NOTECARD "! ao.note"
 integer read = -1;
 integer channel = -432111000;
 
-set_anims() // To do: Add a way to cycle manually or with a timer.
+set_anims()
 {
     BEGIN_ANIM("Crouching",         crouching,         crouching_index);
     BEGIN_ANIM("CrouchWalking",     crouchwalking,     crouchwalking_index);
@@ -63,25 +63,6 @@ set_anims() // To do: Add a way to cycle manually or with a timer.
 
 default
 {
-    attach(key id)
-    {
-        if (llGetPermissions()) set_anims();
-    }
-
-    state_entry()
-    {
-        llRequestPermissions(llGetOwner(), PERMISSION_OVERRIDE_ANIMATIONS);
-    }
-
-    run_time_permissions(integer p)
-    {
-        if (p)
-        {
-            llGetNumberOfNotecardLines(NOTECARD);
-            llListen(channel, "", llGetOwner(), "");
-        }
-    }
-
     touch_start(integer n)
     {
         if (llGetPermissions())
@@ -143,15 +124,17 @@ default
 
     dataserver(key id, string data)
     {
-        if (read >= 0)
-        {
-            // llOwnerSay((string)["read: ", data]);
-            if (data == EOF)
-            {
-                set_anims();
-                llSetColor(<0.251, 0.753, 0.125>, -1);
-                return;
-            }
+        llOwnerSay("Loading notecard synchronously...");
+        llSetColor(<0.957, 0.686, 0.145>, -1);
+
+        integer line;
+        string text;
+
+        for (
+            text = llGetNotecardLineSync(NOTECARD, line);
+            text != EOF && text != NAK;
+            text = llGetNotecardLineSync(NOTECARD, ++line)
+        ) {
             PARSE_ANIM("Crouching=",         crouching,         10);
             PARSE_ANIM("CrouchWalking=",     crouchwalking,     14);
             PARSE_ANIM("Falling Down=",      falling_down,      13);
@@ -174,14 +157,39 @@ default
             PARSE_ANIM("Turning Left=",      turning_left,      13);
             PARSE_ANIM("Turning Right=",     turning_right,     14);
             PARSE_ANIM("Walking=",           walking,            8);
-            llGetNotecardLine(NOTECARD, ++read);
         }
-        else
+
+        if (text == NAK) {
+            llOwnerSay("Cache interrupted, didn't read full notecard!");
+        } else {
+            llOwnerSay("Done!");
+        }
+
+        set_anims();
+        llSetColor(<0.251, 0.753, 0.125>, -1);
+    }
+
+    state_entry()
+    {
+        llRequestPermissions(llGetOwner(), PERMISSION_OVERRIDE_ANIMATIONS);
+    }
+
+    run_time_permissions(integer p)
+    {
+        if (p)
         {
-            llOwnerSay((string)["Loading notecard (about ", (integer)llRound((integer)data * 0.1), "s)..."]);
-            read = 0;
-            llSetColor(<0.957, 0.686, 0.145>, -1);
-            llGetNotecardLine(NOTECARD, read);
+            llGetNumberOfNotecardLines(NOTECARD);
+            llListen(channel, "", llGetOwner(), "");
         }
+    }
+
+    attach(key id)
+    {
+        if (id) if (llGetPermissions()) set_anims();
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_OWNER) llResetScript();
     }
 }
